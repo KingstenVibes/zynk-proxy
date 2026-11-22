@@ -12,13 +12,16 @@ http.createServer(async (req, res) => {
   const chunks = [];
   for await (const c of req) chunks.push(c);
   const body = chunks.length ? Buffer.concat(chunks) : undefined;
-  const headers = { ...req.headers, host: 'oglybmnzspvyruzwwgdi.supabase.co' };
-  delete headers['content-length'];
+
+  const headers = {};
+  for (const [k, v] of Object.entries(req.headers)) {
+    if (['apikey', 'authorization', 'content-type', 'prefer'].includes(k.toLowerCase())) {
+      headers[k] = v;
+    }
+  }
+  headers['host'] = 'oglybmnzspvyruzwwgdi.supabase.co';
 
   const up = await fetch(TARGET + req.url, { method: req.method, headers, body });
-  const outHeaders = Object.fromEntries(up.headers.entries());
-  delete outHeaders['content-encoding'];
-  delete outHeaders['content-length'];
-  res.writeHead(up.status, { ...outHeaders, ...cors });
+  res.writeHead(up.status, { 'Content-Type': up.headers.get('content-type') || 'application/json', ...cors });
   res.end(Buffer.from(await up.arrayBuffer()));
 }).listen(process.env.PORT || 3000);
