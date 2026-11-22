@@ -8,20 +8,28 @@ const cors = {
 };
 
 http.createServer(async (req, res) => {
-  if (req.method === 'OPTIONS') { res.writeHead(204, cors); return res.end(); }
-  const chunks = [];
-  for await (const c of req) chunks.push(c);
-  const body = chunks.length ? Buffer.concat(chunks) : undefined;
-
-  const headers = {};
-  for (const [k, v] of Object.entries(req.headers)) {
-    if (['apikey', 'authorization', 'content-type', 'prefer'].includes(k.toLowerCase())) {
-      headers[k] = v;
-    }
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, cors);
+    return res.end();
   }
-  headers['host'] = 'oglybmnzspvyruzwwgdi.supabase.co';
 
-  const up = await fetch(TARGET + req.url, { method: req.method, headers, body });
-  res.writeHead(up.status, { 'Content-Type': up.headers.get('content-type') || 'application/json', ...cors });
-  res.end(Buffer.from(await up.arrayBuffer()));
+  let body = '';
+  for await (const chunk of req) body += chunk;
+
+  const headers = { host: 'oglybmnzspvyruzwwgdi.supabase.co' };
+  if (req.headers['apikey']) headers['apikey'] = req.headers['apikey'];
+  if (req.headers['authorization']) headers['authorization'] = req.headers['authorization'];
+  if (req.headers['content-type']) headers['content-type'] = req.headers['content-type'];
+  if (req.headers['prefer']) headers['prefer'] = req.headers['prefer'];
+
+  const opts = { method: req.method, headers };
+  if (req.method !== 'GET' && req.method !== 'HEAD' && body) opts.body = body;
+
+  const up = await fetch(TARGET + req.url, opts);
+  const text = await up.text();
+  res.writeHead(up.status, {
+    'Content-Type': up.headers.get('content-type') || 'application/json',
+    ...cors
+  });
+  res.end(text);
 }).listen(process.env.PORT || 3000);
