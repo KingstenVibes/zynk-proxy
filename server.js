@@ -1,6 +1,6 @@
 import http from 'node:http';
 
-const TARGET = 'https://supabase.co';
+const TARGET = 'https://oglybmnzspvyruzwwgdi.supabase.co';
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
